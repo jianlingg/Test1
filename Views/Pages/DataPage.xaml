@@ -5,6 +5,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:ScottPlot="clr-namespace:ScottPlot.WPF;assembly=ScottPlot.WPF"
     xmlns:vm="clr-namespace:Test1.ViewModels"
     Title="DataPage"
     d:DesignHeight="450"
@@ -13,7 +14,7 @@
     mc:Ignorable="d">
 
     <Page.DataContext>
-        <vm:DataPageViewModel IsActive="True" />
+        <vm:DataPageViewModel IsActive="True"/>
     </Page.DataContext>
 
     <Grid Margin="0,0,0,0">
@@ -22,32 +23,58 @@
             <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <DockPanel LastChildFill="True" Grid.Row="0" Margin="10 10 10 0">
-            <ui:Button Command="{Binding OutDataCommand}"
-                       Content="Out"
-                       DockPanel.Dock="Right"
-                       FontFamily="Calibri Light" />
-            <ui:TextBox x:Name="TextBox1"
-                        AutomationProperties.IsRowHeader="True"
-                        Cursor="IBeam"
-                        DockPanel.Dock="Left"
-                        FontFamily="Calibri Light"
-                        FontSize="18"
-                        Text="{Binding InString, Mode=TwoWay}" />
+        <DockPanel
+            Grid.Row="0"
+            Margin="10,10,10,0"
+            LastChildFill="True">
+            <ui:Button
+                Width="80"
+                Appearance="Caution"
+                Command="{Binding OutDataCommand}"
+                Content="Start"
+                DockPanel.Dock="Right"
+                FontFamily="Calibri Light" />
+            <UniformGrid Columns="3" Rows="1">
+                <ui:TextBox
+                    Margin="4,0,4,0"
+                    AutomationProperties.IsRowHeader="True"
+                    Cursor="IBeam"
+                    FontFamily="Calibri Light"
+                    FontSize="18"
+                    PlaceholderText="上升时间"
+                    Text="{Binding RiseTime, Mode=TwoWay}" />
+                <ui:TextBox
+                    Margin="4,0,4,0"
+                    AutomationProperties.IsRowHeader="True"
+                    Cursor="IBeam"
+                    DockPanel.Dock="Left"
+                    FontFamily="Calibri Light"
+                    FontSize="18"
+                    PlaceholderText="间隔时间"
+                    Text="{Binding GapTime, Mode=TwoWay}" />
+                <ui:TextBox
+                    Margin="4,0,4,0"
+                    AutomationProperties.IsRowHeader="True"
+                    Cursor="IBeam"
+                    FontFamily="Calibri Light"
+                    FontSize="18"
+                    PlaceholderText="周期次数"
+                    Text="{Binding CycleNumber, Mode=TwoWay}" />
+            </UniformGrid>
+
         </DockPanel>
-        <ui:DataGrid ItemsSource="{Binding DataGrid}"
-                     Grid.Row="1"
-                  AutoGenerateColumns="False"
-                  Margin="10">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="命令校验"
-                                    Binding="{Binding CmdCheck}" />
-                <DataGridTextColumn Header="回传数据"
-                                    Binding="{Binding InData}" />
-                <DataGridTextColumn Header="数据计算"
-                                    Binding="{Binding Compute}" />
-            </DataGrid.Columns>
-        </ui:DataGrid>
+
+        <DockPanel Grid.Row="1" LastChildFill="True">
+            <ui:TextBox
+                AcceptsReturn="True"
+                TextWrapping="NoWrap"
+                Width="100"
+                VerticalScrollBarVisibility="Visible"
+                HorizontalScrollBarVisibility="Auto" 
+                Text="{Binding Fx3Return}" />
+            <ScottPlot:WpfPlot x:Name="WpfPlot1" />
+        </DockPanel>
+
 
     </Grid>
 </Page>

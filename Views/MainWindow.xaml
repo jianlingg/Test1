@@ -32,6 +32,7 @@
             x:Name="RootNavigation"
             Grid.Row="1"
             Background="#FF189A06"
+            PaneDisplayMode="LeftFluent"
             IsBackButtonVisible="Collapsed">
             <ui:NavigationView.AutoSuggestBox>
                 <ui:AutoSuggestBox x:Name="AutoSuggestBox" PlaceholderText="Search">
@@ -53,7 +54,7 @@
 
             <ui:NavigationView.MenuItems>
                 <ui:NavigationViewItem
-                    Content="Home"
+                    Content="数据分析"
                     NavigationCacheMode="Enabled"
                     TargetPageType="{x:Type pages:DataPage}">
                     <ui:NavigationViewItem.Icon>
@@ -61,14 +62,6 @@
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
 
-                <ui:NavigationViewItem
-                    Content="Figure"
-                    NavigationCacheMode="Enabled"
-                    TargetPageType="{x:Type pages:FigurePage}">
-                    <ui:NavigationViewItem.Icon>
-                        <ui:SymbolIcon Symbol="Home24" />
-                    </ui:NavigationViewItem.Icon>
-                </ui:NavigationViewItem>
             </ui:NavigationView.MenuItems>
 
             <ui:NavigationView.FooterMenuItems>

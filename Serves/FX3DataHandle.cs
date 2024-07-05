@@ -1,45 +1,77 @@
 ﻿using CyUSB;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace Test1.Serves
 {
     public class FX3DataHandle
     {
-        public byte[] FX3DataOut(string CommandString)
+        /// <summary>
+        /// 入参.命令字符串只接收含十六进制字符串的字符串。（方法体内部会清除非十六进制字符串）
+        /// </summary>
+        /// <param name="usbDevice"></param>
+        /// <param name="commandString"></param>
+        /// <returns></returns>
+        public bool FX3DataOut(CyUSBDevice usbDevice, string hexStr)
         {
-            Regex reg = new Regex(@"[^\d|a-f|A-F]");
+            if (usbDevice == null && String.IsNullOrWhiteSpace(hexStr))
+            {
+                return false;
+            }
 
-            CommandString = reg.Replace(CommandString, "");
-
-            int OutLen = (CommandString.Length < 40) ? 40 :
-             (CommandString.Length % 8 == 0) ? CommandString.Length : CommandString.Length - CommandString.Length % 8 + 8;
+            int hexStrLen = (hexStr.Length < 40) ? 40 :
+             (hexStr.Length % 8 == 0) ? hexStr.Length : hexStr.Length - hexStr.Length % 8 + 8;
 
             //补足字符串
-            for (int i = CommandString.Length; i < OutLen; i = i + 1)
+            for (int i = hexStr.Length; i < hexStrLen; i = i + 1)
             {
-                CommandString = CommandString + "0";
+                hexStr = hexStr + "0";
             }
 
-            var CommandStringList = new List<string> { };
+            var hexStrList = new List<string> { };
 
-            for (int i = 0; i < OutLen; i = i + 2)
+            for (int i = 0; i < hexStrLen; i = i + 2)
             {
-                CommandStringList.Add(CommandString.Substring(i, 2));
+                hexStrList.Add(hexStr.Substring(i, 2));
             }
 
-            var CommandBytes = CommandStringList.Select(ByteString => Convert.ToByte(ByteString, 16)).ToArray();
+            var bufOut = hexStrList.Select(x => x.HexToByte()).ToArray();
 
-            return CommandBytes;
+            var lenOut = bufOut.Length;
+
+            return usbDevice!.BulkOutEndPt.XferData(ref bufOut, ref lenOut);
         }
 
-        public List<double> Formula(string formula, List<int> DataList)
+       /// <summary>
+       /// 该方法返回一个列表，列表元素均为长度为8的十六进制字符串。
+       /// </summary>
+       /// <param name="usbDevice"></param>
+       /// <param name="readCount"></param>
+       /// <returns></returns>
+        public List<string>? FX3DataIn(CyUSBDevice usbDevice, int readCount)
+        {
+            if (usbDevice == null)
+            {
+                return null;
+            }
+
+            byte[] bufIn = new byte[readCount];
+
+            usbDevice.BulkInEndPt.XferData(ref bufIn, ref readCount);
+
+            var DataIn = bufIn
+                .AsParallel()
+                .AsOrdered()
+                .Select((value, index) => new { value, index })
+                .GroupBy(x => x.index / 4)
+                .Select(g => BitConverter.ToInt32(g.Select(x => x.value).ToArray(), 0).ToHex(8))
+                .ToList();
+
+            return DataIn;
+
+        }
+
+        public List<double> Formula(string formula, List<int> dataList)
         {
             var parameter = Expression.Parameter(typeof(double), "x"); // 定义参数
 
@@ -47,38 +79,9 @@ namespace Test1.Serves
 
             var compiledFormula = (Func<double, double>)parsedFormula.Compile();// 编译公式
 
-            var NewDataList = DataList.Select(x => compiledFormula(x)).ToList();
+            var NewDataList = dataList.Select(x => compiledFormula(x)).ToList();
 
             return NewDataList;
-        }
-
-        public void FX3DataOut(CyUSBDevice USBDevice, byte[] bufOut)
-        {
-            if (USBDevice != null)
-            {
-                var lenOut = bufOut.Length;
-                USBDevice.BulkOutEndPt.XferData(ref bufOut, ref lenOut);
-            }
-        }
-
-        public List<string>? FX3DataIn(CyUSBDevice USBDevice, int ReadCount)
-        {
-            if (USBDevice != null)
-            {
-                byte[] bufIn = new byte[ReadCount];
-
-                USBDevice.BulkInEndPt.XferData(ref bufIn, ref ReadCount);
-
-                var DataIn = bufIn
-                    .AsParallel()
-                    .AsOrdered()
-                    .Select(x => x.ToString("X2"))
-                    .AsSequential()
-                    .ToList();
-
-                return DataIn;
-            }
-            return null;
         }
     }
 }

@@ -3,109 +3,85 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using CommunityToolkit.Mvvm.Messaging.Messages;
 using CyUSB;
-using System.Collections.ObjectModel;
 using System.Linq.Dynamic.Core;
-using Test1.Models;
 using Test1.Serves;
 
 namespace Test1.ViewModels
 {
-    public partial class DataPageViewModel : ObservableRecipient
+    public partial class DataPageViewModel : ObservableRecipient, IRecipient<ValueChangedMessage<CyUSBDevice>>
     {
-        USBDeviceList? usbDevices;
-        CyUSBDevice? myDevice;
-
-        private string? title;
-        public string? Title
-        {
-            get => title;
-            set
-            {
-                SetProperty(ref title, value);
-                WeakReferenceMessenger.Default.Send(new ValueChangedMessage<string>(Title));
-            }
-        }
+        public CyUSBDevice? myDevice;
 
         [ObservableProperty]
-        private ObservableCollection<FX3Data>? _DataGrid;
+        public string? riseTime = "上升时间:3";
 
         [ObservableProperty]
-        private string? _InString = "00000064000000c80000012c00000064000000c80000012c";
+        private string? gapTime = "间隔时间:2ns";
 
+        [ObservableProperty]
+        private string? cycleNumber = "周期个数:2";
 
+        [ObservableProperty]
+        private string? fx3Return;
 
         [RelayCommand]
-        private void OutData()
+        private async void OutData()
         {
-            if (InString != String.Empty && myDevice != null)
+            if (myDevice == null || String.IsNullOrWhiteSpace(RiseTime) || String.IsNullOrWhiteSpace(GapTime) || String.IsNullOrWhiteSpace(RiseTime))
             {
-                var e = new FX3DataHandle();
-
-                var bufOut = e.FX3DataOut(InString!);
-
-                e.FX3DataOut(myDevice, bufOut);
-
-                var bufInList = e.FX3DataIn(myDevice, bufOut.Length);
-
-                var InDataString = new List<string>();
-
-                for (int i = 0; i < bufInList!.Count; i = i + 4)
-                {
-                    InDataString.Add(bufInList[i] + bufInList[i + 1] + bufInList[i + 2] + bufInList[i + 3]);
-                }
-
-                var DataInt = InDataString
-                .AsParallel()
-                .AsOrdered()
-                .Select(Item => Convert.ToInt32(Item, 16))
-                .AsSequential()
-                .ToList();
-
-                string formula = "x * 2";
-
-                var DateComputes = new FX3DataHandle().Formula(formula, DataInt);
+                return;
             }
+
+            myDevice.BulkOutEndPt.TimeOut = 5000;
+
+            myDevice.BulkInEndPt.TimeOut = 5000;
+
+            var fx3 = new FX3DataHandle();
+
+            var riseTime = RiseTime!.Match(@"\d+");
+
+            var gapTime = GapTime!.Match(@"\d+");
+
+            var cycleNumber = CycleNumber!.Match(@"\d+");
+
+            var commandString = new CommandGenerate().TestParse(riseTime, gapTime, cycleNumber);
+
+            if (fx3.FX3DataOut(myDevice, commandString!))
+            {
+
+                var cmdReturnLen = commandString.Length / 2;
+
+                var cmdReturn = fx3.FX3DataIn(myDevice, cmdReturnLen);
+
+                await Task.Delay(10);
+
+                var testReturnLen = riseTime.ToInt() * cycleNumber.ToInt() * 4;
+
+                var testReturn = fx3.FX3DataIn(myDevice, testReturnLen);
+
+                if (testReturn != null && cmdReturn != null)
+                {
+                    var dataInt = testReturn
+                        .AsParallel()
+                        .AsOrdered()
+                        .Select(x => x.ToInt())
+                        .ToList();
+                    WeakReferenceMessenger.Default.Send(new ValueChangedMessage<List<int>>(dataInt));
+
+                    Fx3Return = @$"Command Counter：{cmdReturn!.Count.ToString()}  Command：{cmdReturn!.Aggregate((c, n) => c + "\t" + n)}
+Data Counter：{testReturn!.Count.ToString()}  Data：{testReturn!.Aggregate((c, n) => c + "\t" + n)}";
+
+                }
+            }
+
         }
-
-
-
         public DataPageViewModel()
         {
-            FX3ConnectState();
+            IsActive = true;
         }
-
-
-        public void FX3ConnectState()
+        public void Receive(ValueChangedMessage<CyUSBDevice> message)
         {
-            usbDevices = new USBDeviceList(CyConst.DEVICES_CYUSB);
-
-            myDevice = usbDevices[0x04B4, 0x00F1] as CyUSBDevice;
-
-            if (myDevice != null)
-            {
-                Title = myDevice.FriendlyName + " 已连接";
-            }
-
-            usbDevices.DeviceAttached += new EventHandler(usbDevices_DeviceAttached);
-
-            usbDevices.DeviceRemoved += new EventHandler(usbDevices_DeviceRemoved);
+            myDevice = message.Value;
         }
-
-
-        private void usbDevices_DeviceRemoved(object? sender, EventArgs e)
-        {
-            var usbEvent = e as USBEventArgs;
-
-            Title = usbEvent!.FriendlyName + " 已移除";
-        }
-
-        private void usbDevices_DeviceAttached(object? sender, EventArgs e)
-        {
-            var usbEvent = e as USBEventArgs;
-
-            Title = usbEvent!.FriendlyName + " 已连接";
-        }
-
     }
-
 }
