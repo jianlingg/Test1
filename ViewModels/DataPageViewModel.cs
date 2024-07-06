@@ -8,18 +8,17 @@ using Test1.Serves;
 
 namespace Test1.ViewModels
 {
-    public partial class DataPageViewModel : ObservableRecipient, IRecipient<ValueChangedMessage<CyUSBDevice>>
+    public partial class DataPageViewModel : ObservableRecipient
     {
-        public CyUSBDevice? myDevice;
 
         [ObservableProperty]
-        public string? riseTime = "上升时间:3";
+        public string? riseTime = "上升时间:256";
 
         [ObservableProperty]
-        private string? gapTime = "间隔时间:2ns";
+        private string? gapTime = "间隔时间:1ns";
 
         [ObservableProperty]
-        private string? cycleNumber = "周期个数:2";
+        private string? cycleNumber = "周期个数:1";
 
         [ObservableProperty]
         private string? fx3Return;
@@ -27,14 +26,17 @@ namespace Test1.ViewModels
         [RelayCommand]
         private async void OutData()
         {
+            var myDevice = new FX3DataHandle().FX3Device();
             if (myDevice == null || String.IsNullOrWhiteSpace(RiseTime) || String.IsNullOrWhiteSpace(GapTime) || String.IsNullOrWhiteSpace(RiseTime))
             {
                 return;
             }
 
-            myDevice.BulkOutEndPt.TimeOut = 5000;
+            myDevice.BulkOutEndPt.TimeOut = 1000;
 
-            myDevice.BulkInEndPt.TimeOut = 5000;
+            myDevice.BulkInEndPt.TimeOut = 1000;
+
+            //myDevice.BulkInEndPt.Reset();
 
             var fx3 = new FX3DataHandle();
 
@@ -49,39 +51,28 @@ namespace Test1.ViewModels
             if (fx3.FX3DataOut(myDevice, commandString!))
             {
 
-                var cmdReturnLen = commandString.Length / 2;
+                //var cmdReturnLen = commandString.Length / 2;
 
-                var cmdReturn = fx3.FX3DataIn(myDevice, cmdReturnLen);
+                //var cmdReturn = fx3.FX3DataIn(myDevice, cmdReturnLen);
 
-                await Task.Delay(10);
+                //await Task.Delay(10);
 
                 var testReturnLen = riseTime.ToInt() * cycleNumber.ToInt() * 4;
 
                 var testReturn = fx3.FX3DataIn(myDevice, testReturnLen);
 
-                if (testReturn != null && cmdReturn != null)
+                if (testReturn != null)
                 {
                     var dataInt = testReturn
                         .AsParallel()
                         .AsOrdered()
-                        .Select(x => x.ToInt())
-                        .ToList();
-                    WeakReferenceMessenger.Default.Send(new ValueChangedMessage<List<int>>(dataInt));
-
-                    Fx3Return = @$"Command Counter：{cmdReturn!.Count.ToString()}  Command：{cmdReturn!.Aggregate((c, n) => c + "\t" + n)}
-Data Counter：{testReturn!.Count.ToString()}  Data：{testReturn!.Aggregate((c, n) => c + "\t" + n)}";
-
+                        .Select(x => x.HexToDec().ToInt())
+                        .ToArray();
+                    WeakReferenceMessenger.Default.Send(new ValueChangedMessage<int[]>(dataInt));
                 }
             }
 
         }
-        public DataPageViewModel()
-        {
-            IsActive = true;
-        }
-        public void Receive(ValueChangedMessage<CyUSBDevice> message)
-        {
-            myDevice = message.Value;
-        }
+
     }
 }

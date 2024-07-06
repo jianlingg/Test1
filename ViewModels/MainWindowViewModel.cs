@@ -2,54 +2,32 @@
 using CommunityToolkit.Mvvm.Messaging;
 using CommunityToolkit.Mvvm.Messaging.Messages;
 using CyUSB;
+using Test1.Serves;
 
 namespace Test1.ViewModels
 {
     public partial class MainWindowViewModel : ObservableRecipient
     {
-        private USBDeviceList? usbDevices;
-        private CyUSBDevice? _myDevice;
-
-        // 使用完整属性定义
-        public CyUSBDevice? MyDevice
-        {
-            get => _myDevice;
-            private set
-            {
-                SetProperty(ref _myDevice, value);
-                if (value != null)
-                {
-                    WeakReferenceMessenger.Default.Send(new ValueChangedMessage<CyUSBDevice>(value));
-                }
-                
-            }
-        }
 
         [ObservableProperty]
         private string _title = "FX3设备未连接";
 
         public MainWindowViewModel()
         {
-            FX3ConnectState();
-        }
+            var usbDevices = new USBDeviceList(CyConst.DEVICES_CYUSB);
 
-        public void FX3ConnectState()
-        {
-            usbDevices = new USBDeviceList(CyConst.DEVICES_CYUSB);
+            var myDevice = new FX3DataHandle().FX3Device();
 
-            MyDevice = usbDevices[0x04B4, 0x00F1] as CyUSBDevice;
-
-            if (MyDevice != null)
+            if (myDevice != null)
             {
-                Title = MyDevice.FriendlyName + " 已连接";
-                
+                Title = myDevice.FriendlyName + " 已连接";
+
             }
 
             usbDevices.DeviceAttached += new EventHandler(usbDevices_DeviceAttached);
 
             usbDevices.DeviceRemoved += new EventHandler(usbDevices_DeviceRemoved);
         }
-
 
         private void usbDevices_DeviceRemoved(object? sender, EventArgs e)
         {

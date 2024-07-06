@@ -83,5 +83,19 @@ namespace Test1.Serves
 
             return NewDataList;
         }
+
+        public CyUSBDevice FX3Device()
+        {
+            var usbDevices = new USBDeviceList(CyConst.DEVICES_CYUSB);
+
+            var MyDevice = usbDevices[0x04B4, 0x00F1] as CyUSBDevice;
+
+            if (MyDevice == null)
+            {
+                return null;
+            }
+            return MyDevice;
+
+        }
     }
 }
