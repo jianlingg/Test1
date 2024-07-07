@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Collections;
+using System.Text.RegularExpressions;
 
 namespace Test1.Serves
 {
@@ -118,10 +119,28 @@ namespace Test1.Serves
             return Convert.ToByte(input, 16);
         }
 
+        //字符串扩展方法：判断是否为空或空白字符串
+        public static bool IsNullOrEmpty(this string input)
+        {
+            return String.IsNullOrEmpty(input);
+        }
+
+        //字符串扩展方法：判断是否为空或空白字符串
+        public static bool IsNullOrWhiteSpace(this string input)
+        {
+            return String.IsNullOrWhiteSpace(input);
+        }
+
         //int扩展方法：int转十六进制字符串。(入参：十六进制字符长度)
         public static string ToHex(this int input, int length)
         {
             return Convert.ToString(input, 16).PadLeft(length, '0');
+        }
+
+        //字符串列表扩展方法：将字符串列表所有元素以分隔符合并为一个字符串
+        public static string Join(this List<string> input, string separator)
+        {
+            return string.Join(separator, input);
         }
 
     }
