@@ -58,7 +58,6 @@ namespace Test1.Serves
             byte[] bufIn = new byte[readCount];
 
             usbDevice.BulkInEndPt.XferData(ref bufIn, ref readCount);
-
             var DataIn = bufIn
                 .AsParallel()
                 .AsOrdered()

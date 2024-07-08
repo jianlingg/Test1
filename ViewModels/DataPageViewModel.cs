@@ -18,7 +18,7 @@ namespace Test1.ViewModels
         private string? gapTime = "间隔时间:1ns";
 
         [ObservableProperty]
-        private string? cycleNumber = "周期个数:1";
+        private string? cycleNumber = "周期个数:3";
 
         [ObservableProperty]
         private string? fx3Return;

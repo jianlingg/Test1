@@ -1,6 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.Messaging;
 using CommunityToolkit.Mvvm.Messaging.Messages;
-using ScottPlot;
 using System.Windows.Controls;
 
 namespace Test1.Views.Pages
@@ -28,13 +27,25 @@ namespace Test1.Views.Pages
             if (dataY.Length > 0)
             {
                 myPlot.Plot.Clear(); // 清除之前的绘图
-                var s = myPlot.Plot.Add.Signal(dataY, 1);
-                s.LegendText = $"Max:{dataY.Max()}Min:{dataY.Min()},Average:{dataY.Average()}Counter:{dataY.Length}";
-                myPlot.Plot.Axes.AutoScale();
-                myPlot.Plot.SavePng("demo.png", 600, 400);
-                //myPlot.Plot.Axes.SetLimits(0, dataY.Length, dataY.Min(), dataY.Max());
-                //myPlot.Plot.XLabel("Plot Title");
-                //myPlot.Plot.YLabel("Plot Title");
+                var Plot = myPlot.Plot.Add.SignalConst(dataY, 1);//实例信号图
+                //Plot.LegendText = $"Max:{dataY.Max()}Min:{dataY.Min()},Average:{dataY.Average()}Counter:{dataY.Length}";//配置说明框内容
+                
+                myPlot.Plot.Add.Annotation($"Max:{dataY.Max()}  Min:{dataY.Min()}  P-P:{dataY.Max()- dataY.Min()}  Average:{dataY.Average()}  Count:{dataY.Length}");
+                myPlot.Plot.HideGrid();//隐藏网格
+                //myPlot.Plot.Axes.Rules.Clear();
+                
+                //myPlot.Plot.Axes.AutoScale();
+                //myPlot.Plot.SavePng("demo.png", 600, 400);
+                myPlot.Plot.Axes.SetLimits(0, dataY.Length, dataY.Min(), dataY.Max());
+                ScottPlot.AxisRules.LockedVertical rule = new(myPlot.Plot.Axes.Left, dataY.Min(), dataY.Max());
+                myPlot.Plot.Axes.Rules.Add(rule);
+
+                myPlot.Plot.Axes.Bottom.Label.Text = $"x/ns";
+                myPlot.Plot.Axes.Left.Label.Text = $"y/Point";
+                myPlot.Plot.Axes.Bottom.Label.ForeColor = Plot.Color;
+                myPlot.Plot.Axes.Left.Label.ForeColor = Plot.Color;
+                //myPlot.Plot.XLabel("Plot X Title");
+                //myPlot.Plot.YLabel("Plot Y Title");
                 //myPlot.Plot.Title("Plot Title");
 
                 //var myScatter = WpfPlot1.Plot.Add.Scatter(dataX, dataY);
