@@ -48,7 +48,7 @@ namespace Test1.Serves
        /// <param name="usbDevice"></param>
        /// <param name="readCount"></param>
        /// <returns></returns>
-        public List<string>? FX3DataIn(CyUSBDevice usbDevice, int readCount)
+        public byte[]? FX3DataIn(CyUSBDevice usbDevice, int readCount)
         {
             if (usbDevice == null)
             {
@@ -58,15 +58,8 @@ namespace Test1.Serves
             byte[] bufIn = new byte[readCount];
 
             usbDevice.BulkInEndPt.XferData(ref bufIn, ref readCount);
-            var DataIn = bufIn
-                .AsParallel()
-                .AsOrdered()
-                .Select((value, index) => new { value, index })
-                .GroupBy(x => x.index / 4)
-                .Select(g => BitConverter.ToInt32(g.Select(x => x.value).ToArray(), 0).ToHex(8))
-                .ToList();
 
-            return DataIn;
+            return bufIn;
 
         }
 

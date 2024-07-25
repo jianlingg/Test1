@@ -34,32 +34,23 @@
                 Content="Start"
                 DockPanel.Dock="Right"
                 FontFamily="Calibri Light" />
-            <UniformGrid Columns="3" Rows="1">
+            <UniformGrid Columns="2" Rows="1">
                 <ui:TextBox
                     Margin="4,0,4,0"
                     AutomationProperties.IsRowHeader="True"
                     Cursor="IBeam"
                     FontFamily="Calibri Light"
                     FontSize="18"
-                    PlaceholderText="上升时间"
-                    Text="{Binding RiseTime, Mode=TwoWay}" />
-                <ui:TextBox
-                    Margin="4,0,4,0"
-                    AutomationProperties.IsRowHeader="True"
-                    Cursor="IBeam"
-                    DockPanel.Dock="Left"
-                    FontFamily="Calibri Light"
-                    FontSize="18"
-                    PlaceholderText="间隔时间"
-                    Text="{Binding GapTime, Mode=TwoWay}" />
+                    PlaceholderText="CMD"
+                    Text="{Binding CMD, Mode=TwoWay}" />
                 <ui:TextBox
                     Margin="4,0,4,0"
                     AutomationProperties.IsRowHeader="True"
                     Cursor="IBeam"
                     FontFamily="Calibri Light"
                     FontSize="18"
-                    PlaceholderText="周期次数"
-                    Text="{Binding CycleNumber, Mode=TwoWay}" />
+                    PlaceholderText="Count"
+                    Text="{Binding InCount, Mode=TwoWay}" />
             </UniformGrid>
 
         </DockPanel>

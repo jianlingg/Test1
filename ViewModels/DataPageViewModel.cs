@@ -2,7 +2,6 @@
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using CommunityToolkit.Mvvm.Messaging.Messages;
-using CyUSB;
 using System.Linq.Dynamic.Core;
 using Test1.Serves;
 
@@ -12,22 +11,17 @@ namespace Test1.ViewModels
     {
 
         [ObservableProperty]
-        public string? riseTime = "上升时间:256";
+        public string? _CMD = "a050000100001400a0800001000000000";
+
 
         [ObservableProperty]
-        private string? gapTime = "间隔时间:1ns";
-
-        [ObservableProperty]
-        private string? cycleNumber = "周期个数:3";
-
-        [ObservableProperty]
-        private string? fx3Return;
+        private string? _InCount = "1024";
 
         [RelayCommand]
-        private async void OutData()
+        private void OutData()
         {
             var myDevice = new FX3DataHandle().FX3Device();
-            if (myDevice == null || String.IsNullOrWhiteSpace(RiseTime) || String.IsNullOrWhiteSpace(GapTime) || String.IsNullOrWhiteSpace(RiseTime))
+            if (myDevice == null || String.IsNullOrWhiteSpace(CMD) || String.IsNullOrWhiteSpace(InCount))
             {
                 return;
             }
@@ -40,13 +34,7 @@ namespace Test1.ViewModels
 
             var fx3 = new FX3DataHandle();
 
-            var riseTime = RiseTime!.Match(@"\d+");
-
-            var gapTime = GapTime!.Match(@"\d+");
-
-            var cycleNumber = CycleNumber!.Match(@"\d+");
-
-            var commandString = new CommandGenerate().TestParse(riseTime, gapTime, cycleNumber);
+            var commandString = CMD;
 
             if (fx3.FX3DataOut(myDevice, commandString!))
             {
@@ -57,22 +45,29 @@ namespace Test1.ViewModels
 
                 //await Task.Delay(10);
 
-                var testReturnLen = riseTime.ToInt() * cycleNumber.ToInt() * 4;
+                var testReturnLen = InCount.ToInt() * 2;
 
                 var testReturn = fx3.FX3DataIn(myDevice, testReturnLen);
 
-                if (testReturn != null)
+                if (testReturn != null && testReturn.Length > 0)
                 {
-                    var dataInt = testReturn
-                        .AsParallel()
-                        .AsOrdered()
-                        .Select(x => x.HexToDec().ToInt())
-                        .ToArray();
-                    WeakReferenceMessenger.Default.Send(new ValueChangedMessage<int[]>(dataInt));
-                }
-            }
+                    List<ushort> AData = new List<ushort>();
 
+                    for (int i = 0; i < testReturn.Length; i += 2)
+                    {
+                        ushort combined = (ushort)((testReturn[i] << 8) | testReturn[i + 1]);
+                        AData.Add(combined);
+                    }
+
+                    var s = AData.Select(x => (int)x).ToArray();
+
+                    WeakReferenceMessenger.Default.Send(new ValueChangedMessage<int[]>(s));
+                }
+                return;
+            }
+            return;
         }
 
     }
+
 }

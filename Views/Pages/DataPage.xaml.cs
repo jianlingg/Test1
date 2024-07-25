@@ -11,7 +11,6 @@ namespace Test1.Views.Pages
     {
         int[] dataY = Array.Empty<int>();
 
-
         public DataPage()
         {
             InitializeComponent();
@@ -40,7 +39,7 @@ namespace Test1.Views.Pages
                 ScottPlot.AxisRules.LockedVertical rule = new(myPlot.Plot.Axes.Left, dataY.Min(), dataY.Max());
                 myPlot.Plot.Axes.Rules.Add(rule);
 
-                myPlot.Plot.Axes.Bottom.Label.Text = $"x/ns";
+                myPlot.Plot.Axes.Bottom.Label.Text = $"x/4us";
                 myPlot.Plot.Axes.Left.Label.Text = $"y/Point";
                 myPlot.Plot.Axes.Bottom.Label.ForeColor = Plot.Color;
                 myPlot.Plot.Axes.Left.Label.ForeColor = Plot.Color;
