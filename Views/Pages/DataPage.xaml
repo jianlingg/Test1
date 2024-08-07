@@ -34,24 +34,14 @@
                 Content="Start"
                 DockPanel.Dock="Right"
                 FontFamily="Calibri Light" />
-            <UniformGrid Columns="2" Rows="1">
-                <ui:TextBox
-                    Margin="4,0,4,0"
-                    AutomationProperties.IsRowHeader="True"
-                    Cursor="IBeam"
-                    FontFamily="Calibri Light"
-                    FontSize="18"
-                    PlaceholderText="CMD"
-                    Text="{Binding CMD, Mode=TwoWay}" />
-                <ui:TextBox
-                    Margin="4,0,4,0"
-                    AutomationProperties.IsRowHeader="True"
-                    Cursor="IBeam"
-                    FontFamily="Calibri Light"
-                    FontSize="18"
-                    PlaceholderText="Count"
-                    Text="{Binding InCount, Mode=TwoWay}" />
-            </UniformGrid>
+            <ui:TextBox
+                Margin="4,0,4,0"
+                AutomationProperties.IsRowHeader="True"
+                Cursor="IBeam"
+                FontFamily="Calibri Light"
+                FontSize="18"
+                PlaceholderText="CMD"
+                Text="{Binding CMD, Mode=TwoWay}" />
 
         </DockPanel>
 

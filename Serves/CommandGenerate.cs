@@ -2,32 +2,40 @@
 {
     class CommandGenerate
     {
-        
-        public string TestParse(string riseTime, string gapTime, string cycleNumber)
-        {
-            var outCommand = $"{riseTime.DecToHex(8)}{gapTime.DecToHex(8)}{cycleNumber.DecToHex(8)}";
 
-            return FX3CommandFrame(1, outCommand);
+        static public (string, int) CmdParse(string input)
+        {
+            var inputs = input.Remove(@"\s").ToLower();
+
+            var Mark = inputs.Match(@"\w+:");
+
+            int ReturnLen = 0;
+
+            if (Mark == "test:")
+            {
+                var MyCmd = inputs.Remove(@"\w+:")
+                .Split(",")
+                .Select(x => x.Split(".").ToArray())
+                .ToDictionary(x => x[0], x => x[1]);
+
+                ReturnLen = MyCmd["data"].ToInt() * MyCmd["count"].ToInt() * 2;
+
+                return (TestParse(MyCmd["data"], MyCmd["gap"], MyCmd["count"]), ReturnLen);
+            }
+            return (string.Empty, 0);
         }
 
-        //采样通道字符串解析
-        string ChannelParse(string AcqChannel, string AcqRate, string AcqCounter)
+        //测试回传指令
+        static string TestParse(string data, string gap, string count)
         {
-            var ch1 = AcqChannel.IsMatch(@"1") ? "1" : "0";
-            var ch2 = AcqChannel.IsMatch(@"2") ? "1" : "0";
-            var ch3 = AcqChannel.IsMatch(@"3") ? "1" : "0";
-            var ch4 = AcqChannel.IsMatch(@"4") ? "1" : "0";
-            var Channels = ch1 + ch2 + ch3 + ch4;
-            return $"d8100002{Convert.ToString(Convert.ToInt32(Channels, 2), 16)}{AcqRate.Match(@"\d+").DecToHex(7)}{AcqCounter.Match(@"\d+").DecToHex(8)}";
+            var outCommand = $"{data.DecToHex(8)}{gap.DecToHex(8)}{count.DecToHex(8)}";
+
+            return FX3CmdGen(1, outCommand);
         }
+
 
         //FX3控制指令字符串生成
-        public static string FX3CommandFrame(int target, List<string> args)
-        {
-            return $"A{target.ToHex(2)}{args.Count.ToHex(5)}{args.Aggregate((c, n) => c + n)}";
-        }
-
-        public static string FX3CommandFrame(int target, string args)
+        static string FX3CmdGen(int target, string args)
         {
             return $"A{target.ToHex(2)}{(args.Length / 8).ToHex(5)}{args}";
         }

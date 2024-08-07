@@ -2,8 +2,10 @@
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using CommunityToolkit.Mvvm.Messaging.Messages;
-using System.DirectoryServices.ActiveDirectory;
+using System.IO;
 using System.Linq.Dynamic.Core;
+using System.Text;
+using System.Windows;
 using Test1.Serves;
 
 namespace Test1.ViewModels
@@ -12,78 +14,86 @@ namespace Test1.ViewModels
     {
 
         [ObservableProperty]
-        public string? _CMD = "1";//a0100003000001000000010000000004
+        public string? _CMD = "test:data.16384,gap.1,count.1";//a0100003000001000000010000000004
 
-
-        [ObservableProperty]
-        private string? _InCount = "65535";
 
         [RelayCommand]
         private void OutData()
         {
             var myDevice = new FX3DataHandle().FX3Device();
 
-            //全空返
-            if (myDevice == null)
+            if (myDevice == null || String.IsNullOrWhiteSpace(CMD))
             {
                 return;
             }
 
-
-            myDevice.BulkOutEndPt.TimeOut = 1000;
-
-            myDevice.BulkInEndPt.TimeOut = 1000;
+            myDevice.BulkInEndPt.TimeOut = 100000;
 
             //myDevice.BulkInEndPt.Reset();
 
             var fx3 = new FX3DataHandle();
 
-            //命令空，则发长度
-            if (String.IsNullOrWhiteSpace(CMD) && !String.IsNullOrWhiteSpace(InCount))
-            {
-                var strxx = $"d8600002003800010018{InCount.DecToHex(4)}";
-                var s = fx3.FX3DataOut(myDevice, strxx);
-                return;
-            }
-
-            if (String.IsNullOrWhiteSpace(CMD) || String.IsNullOrWhiteSpace(InCount))
-            {
-                return;
-            }
-
-            var commandString = $"d850000400000032000000320000001400000014d8100001027FD801d830000180000000d8680001{CMD}0000000d890000100000001";
+            var commandString = CommandGenerate.CmdParse(CMD).Item1;
 
             if (fx3.FX3DataOut(myDevice, commandString!))
             {
 
-                //var cmdReturnLen = commandString.Length / 2;
+                var bufInLen = CommandGenerate.CmdParse(CMD).Item2;
 
-                //var cmdReturn = fx3.FX3DataIn(myDevice, cmdReturnLen);
-
-                //await Task.Delay(10);
-
-                //var testReturnLen = InCount.ToInt();
-                var testReturnLen = 65536;
-
-
-                var testReturn = fx3.FX3DataIn(myDevice, testReturnLen);
-
-                if (testReturn != null && testReturn.Length > 0)
+                if (bufInLen > 0)
                 {
-                    List<ushort> AData = new List<ushort>();
+                    var bufIn = fx3.FX3DataIn(myDevice, bufInLen);
 
-                    for (int i = 0; i < testReturn.Length; i += 2)
+                    List<int> DataIn = new List<int>();
+
+                    for (int i = 0; i < bufIn!.Length; i += 2)
                     {
-                        ushort combined = (ushort)((testReturn[i] << 8) | testReturn[i + 1]);
-                        AData.Add(combined);
+                        int combined = (int)((bufIn[i + 1] << 8) | (bufIn[i]));
+                        DataIn.Add(combined);
                     }
-                    var s = AData.Select(x => ((int)(x & 0x0FFF))).ToArray();
+
+                    bool isTrue = true;
+
+                    for (int i = 0; i < DataIn!.Count(); i += 1)
+                    {
+                        if (DataIn[i] != i % 16384)
+                        {
+                            isTrue = false; break;
+                        }
+                    }
+
+                    //Task writeTask = WriteTextAsync(@$"E:\xxx.txt", DataIn);
+
+                    //var stringsToWrite = s.Select(x => $"{x.ToHex(4)}  {x.ToString()}").ToList().Join("\n");
+
+                    
+
+                    //File.WriteAllTextAsync(@$"E:\xxx.txt", stringsToWrite);
+
+                    var s = DataIn.ToArray();
 
                     WeakReferenceMessenger.Default.Send(new ValueChangedMessage<int[]>(s));
+
+                    MessageBox.Show(isTrue.ToString());
                 }
+
                 return;
             }
             return;
+        }
+
+        static async Task WriteTextAsync(string filePath, List<int> input)
+        {
+            var content = input.Select(x => $"{x.ToHex(4)}  {x.ToString()}").ToList().Join("\n");
+
+            byte[] encodedText = Encoding.Unicode.GetBytes(content);
+
+            using (FileStream sourceStream = new FileStream(filePath,
+                FileMode.Create, FileAccess.Write, FileShare.None,
+                bufferSize: 4096, useAsync: true))
+            {
+                await sourceStream.WriteAsync(encodedText, 0, encodedText.Length);
+            }
         }
 
     }
